@@ -2,6 +2,7 @@ import pygame
 from pygame import *
 from random import randint
 from threading import Thread
+from time import sleep
 
 win = pygame.display.set_mode((1280, 720))
 pygame.display.set_caption('Game Of Life - John Horton Conway')
@@ -21,6 +22,7 @@ def render():
    for row in render_list:
       for cell in row:
          cell.render(size)
+
    pygame.display.update()
 
 class Cell():
@@ -97,11 +99,14 @@ def tick():
       for cell in row:
          cell.alive = cell.future()
 
-for ind_x, x in enumerate(range(-500, 500, rect_size)):
+for ind_y, y in enumerate(range(0, 500, rect_size)):
    l = []
-   for ind_y, y in enumerate(range(-500, 500, rect_size)):
+   for ind_x, x in enumerate(range(0, 500, rect_size)):
       l.append(Cell(x, y, ind_x, ind_y, 0))
+
    render_list.append(l)
+   render()
+   sleep(1)
 
 def dragMove():
    global vector_x, vector_y
@@ -126,6 +131,10 @@ render_list[2][0].alive = 1
 render_list[2][1].alive = 1
 render_list[2][2].alive = 1
 
+map_print()
+
+render()
+
 run = True
 Thread(target=dragMove).start()
 while run:
@@ -140,7 +149,7 @@ while run:
             break
 
          elif event.key == pygame.K_SPACE:
-            # tick()
+            tick()
             render()
       
       elif event.type == pygame.MOUSEWHEEL:
