@@ -44,7 +44,7 @@ class Cell():
          else:
             pygame.draw.rect(win, (13, 59, 102), (x, y, size, size))
 
-   def surroundings(self):
+   def surroundings(self, test=False):
       l = []
       for y in range(-1, 2):
          ll = []
@@ -53,7 +53,8 @@ class Cell():
             xi, yi = self.ind_x + x, self.ind_y + y
 
             if xi >= 0 and yi >= 0 and xi < len(render_list[0]) and yi < len(render_list):
-               ll.append(render_list[yi][xi])
+               if not test: ll.append(render_list[yi][xi])
+               else: ll.append(render_list[yi][xi].alive)
 
          l.append(ll)
       return l
@@ -63,16 +64,16 @@ class Cell():
       for row in surroundings:
          for cell in row:
            s += cell.alive
-      return s-1
+      return s
 
    def future(self):
-      s = self.surr_sum(self.surroundings())
-
       if self.alive:
+         s = self.surr_sum(self.surroundings())-1
          if s < 2:               return 0
          elif s == 2 or s == 3:  return 1
          elif s > 3:             return 0
       else:
+         s = self.surr_sum(self.surroundings())
          if s == 3:              return 1
 
       return 0
@@ -91,22 +92,29 @@ def tick():
 
    # cells = list(cell_check)
 
-   size = rect_size*scale
-
-   r = render_list[:]
-
-   for row in r:
+   print('\n')
+   for row in render_list:
+      l = []
       for cell in row:
-         cell.alive = cell.future()
+         l.append(cell.future())
+      print(l)
+
+   # l = list()
+   # print(l)
+
+   # for row in render_list:
+   #    ll = []
+   #    for cell in row:
+   #       ll.append(Cell(cell.x, cell.y, ind_x, cell.ind_y, cell.future()))
+   #    l.append(ll)
+
+   # render_list = l
 
 for ind_y, y in enumerate(range(0, 500, rect_size)):
    l = []
    for ind_x, x in enumerate(range(0, 500, rect_size)):
       l.append(Cell(x, y, ind_x, ind_y, 0))
-
    render_list.append(l)
-   render()
-   sleep(1)
 
 def dragMove():
    global vector_x, vector_y
@@ -127,12 +135,15 @@ def map_print():
       print(l)
    print()
 
-render_list[2][0].alive = 1
 render_list[2][1].alive = 1
 render_list[2][2].alive = 1
+render_list[2][3].alive = 1
 
-map_print()
+# print(render_list[1][1].surroundings(test=1))
+# print(render_list[1][1].surr_sum(render_list[1][1].surroundings()))
+# print(render_list[1][1].future())
 
+# map_print()
 render()
 
 run = True
