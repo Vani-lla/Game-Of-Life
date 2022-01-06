@@ -6,6 +6,6 @@ frames = [cv.imread(path) for path in sorted(glob('frames/frame*.png'), key=lamb
 *size, _ = frames[0].shape
 
 # Creating video from frames
-video = cv.VideoWriter('yea.avi', cv.VideoWriter_fourcc(*'MJPG'), 60, (size[1], size[0]))
+video = cv.VideoWriter('Game of life.avi', cv.VideoWriter_fourcc(*'MJPG'), 15, (size[1], size[0]))
 for frame in frames: video.write(frame)
 video.release()

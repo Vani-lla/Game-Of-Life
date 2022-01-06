@@ -101,6 +101,8 @@ def interupt():
       if command == 'stop':
          run = False
          break
+      elif command == 'times':
+         print(f'Average time per frame: {sum(times)/len(times):3f}s')
    return
 
 if __name__ == '__main__':
@@ -116,11 +118,13 @@ if __name__ == '__main__':
    # Creating frames
    Thread(target=interupt).start()
 
-   start, run, n = time(), True, 0
+   start, run, n, times = time(), True, 0, []
    while run:
+      s_ = time()
       cv.imwrite(f'./frames/frame{n}.png', grid)
       grid = tick(16, grid, size)
       n += 1
+      times.append(time()-s_)
 
    print(f'{time()-start:3f}s')
 
