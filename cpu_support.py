@@ -51,48 +51,89 @@ def full_surroundings(ind_x, ind_y, size):
 
 def opt_tick(mini_grid, grid, no, ind_correction, size):
    to_check = set()
+
    future_grid = np.copy(mini_grid)
 
+   if ind_correction > 0:
+      if ind_correction+len(future_grid) < len(grid):
+         check = np.row_stack((grid[ind_correction-1], future_grid, grid[ind_correction+len(future_grid)]))
+      else:
+         check = np.row_stack((grid[ind_correction-1], future_grid))
+   elif ind_correction+len(future_grid) < len(grid):
+      check = np.row_stack((future_grid, grid[len(future_grid)]))
+   else:
+      check = future_grid
+
    # Selecting cells to check
-   for ind_y, row in enumerate(mini_grid):
+   for ind_y, row in enumerate(check):
       if 255 in row:
          for ind_x, cell in enumerate(row):
             if cell==255:
                full = full_surroundings(ind_x, ind_y, size)
-               for ind in full:
-                  to_check.add(ind)
-
-   to_check = sorted(list(to_check), key=lambda x: x[1])
+               for xi, yi in full:
+                  if yi < len(future_grid):
+                     to_check.add((xi, yi))
 
    # Generating future generation
    for ind_x, ind_y in to_check:
-      try:
-         future_grid[ind_y][ind_x] = future(grid[ind_y+ind_correction][ind_x], surroundings(ind_x, ind_y+ind_correction, size, grid))
-      except IndexError:
-         break
-   
+      cell = grid[ind_y+ind_correction][ind_x]
+      neighborhood = surroundings(ind_x, ind_y+ind_correction, size, grid)
+
+      future_grid[ind_y][ind_x] = future(cell, neighborhood)
+
    return future_grid, no
 
-def tick(n, grid, size):
-   # Splitting main grid into n smaller ones
-   arrays = np.array_split(np.copy(grid), n)
-   next_grid = []
+def cells_to_detect(mini_grid, size, ind_correction):
+   # Selecting cells to check
+   to_check = set()
 
-   # Starting a thread for each small grid
+   for ind_y, row in enumerate(mini_grid):
+      if 255 in row:
+         for ind_x, cell in enumerate(row):
+            if cell==255:
+               for xi, yi in full_surroundings(ind_x, ind_y, size):
+                  to_check.add((xi, yi+ind_correction))
+
+   return to_check
+
+def future_list(l, size, grid):
+   odp = []
+   for ind_x, ind_y in l:
+      neighborhood = surroundings(ind_x, ind_y, size, grid)
+      odp.append((ind_x, ind_y, future(grid[ind_y][ind_x], neighborhood)))
+   return odp
+
+def tick(n, grid, size):
+   future_grid = np.copy(grid)
+   
    with futures.ProcessPoolExecutor() as executor:
       threads = []
 
+      # Selecting cells
       ind_correction = 0
-      for no, array in enumerate(arrays):
-         threads.append(executor.submit(opt_tick, array, grid, no, ind_correction, size))
+      for array in np.array_split(future_grid, n):
+         threads.append(executor.submit(cells_to_detect, array, size, ind_correction) )
          ind_correction += len(array)
 
+      # Filtering
+      to_check = set()
       for thread in futures.as_completed(threads):
-         next_grid.append(thread.result())
+         to_check = to_check.union(thread.result())
+      
+      # Spliting to predict future
+      threads.clear()
+      for array in np.array_split(list(to_check), n):
+         threads.append(executor.submit(future_list, array, size, grid))
 
-   # Sorting generated and returning created frame
-   next_grid = list(map(lambda x: x[0],sorted(next_grid, key=lambda x: x[1])))
-   return np.row_stack(next_grid)
+      # Rendering output
+      for thread in futures.as_completed(threads):
+         for ind_x, ind_y, f in thread.result():
+            try:
+               future_grid[ind_y][ind_x] = f
+            except IndexError:
+               continue
+
+   return future_grid
 
 def interupt():
    global run
@@ -103,6 +144,12 @@ def interupt():
          break
       elif command == 'times':
          print(f'Average time per frame: {sum(times)/len(times):3f}s')
+      elif command == 'frames':
+         print(n)
+      elif command == 'frames stop':
+         run = False
+         print(n)
+         break
    return
 
 if __name__ == '__main__':
@@ -111,10 +158,21 @@ if __name__ == '__main__':
    if not path.exists(dir_path): makedirs(dir_path)
 
    # First Frame
-   first_frame = cv.imread('start.png')
+   first_frame = cv.imread('start_.png')
    *size, _ = first_frame.shape
    grid = np.array([[cell[0] for cell in row] for row in first_frame])
-   
+      
+   if False:
+      start = time()
+      for _ in range(2):
+         cv.imwrite('frames/good_frame.png', opt_tick(grid, grid, 0, 0, size)[0])
+      print(f'{time()-start:4f}s')
+
+      start = time()
+      for _ in range(2):
+         cv.imwrite('frames/good_frame.png', better_tick(16, grid, size))
+      print(f'{time()-start:4f}s')
+
    # Creating frames
    Thread(target=interupt).start()
 
@@ -122,7 +180,7 @@ if __name__ == '__main__':
    while run:
       s_ = time()
       cv.imwrite(f'./frames/frame{n}.png', grid)
-      grid = tick(16, grid, size)
+      grid = tick(8, grid, size)
       n += 1
       times.append(time()-s_)
 
