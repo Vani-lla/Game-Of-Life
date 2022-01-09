@@ -197,11 +197,11 @@ if __name__ == '__main__':
    # Creating frames
    Thread(target=interupt).start()
 
-   start, run, times, dates = time(), True, [], []
+   start, run, times, dates, t = time(), True, [], [], int(input('Number of cores: '))
    while run:
       s_ = time()
       cv.imwrite(f'./frames/frame{n}.png', grid)
-      grid = tick(16, grid, size)
+      grid = tick(t, grid, size)
       n += 1
       times.append(time()-s_)
       dates.append(localtime())
