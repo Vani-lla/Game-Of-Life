@@ -10,9 +10,9 @@ fps = int(input("How many FPS: "))
 video_format = input("Select video format ('mp4'/'avi'): ")
 
 if video_format == 'mp4':
-   video = cv.VideoWriter('Game of life.mp4', cv.VideoWriter_fourcc(*'mp4v'), fps, (size[1], size[0]))
+   video = cv.VideoWriter('Game_of_life.mp4', cv.VideoWriter_fourcc(*'mp4v'), fps, (size[1], size[0]))
 else:
-   video = cv.VideoWriter('Game of life.avi', cv.VideoWriter_fourcc(*'MJPG'), fps, (size[1], size[0]))
+   video = cv.VideoWriter('Game_of_life.avi', cv.VideoWriter_fourcc(*'MJPG'), fps, (size[1], size[0]))
 
 for frame in frames: video.write(frame)
 video.release()
