@@ -34,15 +34,14 @@ def future(cell, neighborhood):
       if   neighborhood == 765: return 255
       else:                     return 0
 
-def full_surroundings(ind_x, ind_y, size):
+def full_surroundings(ind_x, ind_y, size, ind_correction):
    """
       Returns indexes of all surrounding cells
    """
-
    cells = []
    for y in range(-1, 2):
       for x in range(-1, 2):
-         xi, yi = ind_x+x, ind_y+y
+         xi, yi = ind_x + x, ind_y + y + ind_correction
 
          if xi < size[1] and xi >= 0 and yi < size[0] and yi >= 0:
             cells.append((xi, yi))
@@ -91,8 +90,8 @@ def cells_to_detect(mini_grid, size, ind_correction):
       if 255 in row:
          for ind_x, cell in enumerate(row):
             if cell==255:
-               for xi, yi in full_surroundings(ind_x, ind_y, size):
-                  to_check.add((xi, yi+ind_correction))
+               for xi, yi in full_surroundings(ind_x, ind_y, size, ind_correction):
+                  to_check.add((xi, yi))
 
    return to_check
 
@@ -143,7 +142,10 @@ def interupt():
          run = False
          break
       elif command == 'times':
-         print(f'Average time per frame: {sum(times)/len(times):3f}s')
+         try:
+            print(f'Average time per frame: {sum(times)/len(times):3f}s')
+         except:
+            print("No times to print yet")
       elif command == 'frames':
          print(n)
       elif command == 'frames stop':
@@ -161,7 +163,7 @@ if __name__ == '__main__':
    first_frame = cv.imread('start_.png')
    *size, _ = first_frame.shape
    grid = np.array([[cell[0] for cell in row] for row in first_frame])
-      
+   
    if False:
       start = time()
       for _ in range(2):
@@ -170,7 +172,7 @@ if __name__ == '__main__':
 
       start = time()
       for _ in range(2):
-         cv.imwrite('frames/good_frame.png', better_tick(16, grid, size))
+         cv.imwrite('frames/good_frame.png', better_tick(24, grid, size))
       print(f'{time()-start:4f}s')
 
    # Creating frames
@@ -180,7 +182,7 @@ if __name__ == '__main__':
    while run:
       s_ = time()
       cv.imwrite(f'./frames/frame{n}.png', grid)
-      grid = tick(8, grid, size)
+      grid = tick(24, grid, size)
       n += 1
       times.append(time()-s_)
 
