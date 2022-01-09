@@ -1,7 +1,8 @@
 from os import path, makedirs, getcwd
-from time import time
+from time import time, localtime, asctime
 from concurrent import futures
 from threading import Thread
+from glob import glob
 
 import cv2 as cv
 import numpy as np
@@ -136,6 +137,10 @@ def tick(n, grid, size):
 
 def interupt():
    global run
+   print("Commands:")
+   print("  'stop' - stops rendering frames")
+   print("  'frames' - prints number of rendered frames")
+   print("  'frames stop' - prints number of rendered frames and stops programme")
    while True:
       command = input()
       if command == 'stop':
@@ -159,11 +164,25 @@ if __name__ == '__main__':
    dir_path = path.join(getcwd(), 'frames')
    if not path.exists(dir_path): makedirs(dir_path)
 
-   # First Frame
-   first_frame = cv.imread('start_.png')
-   *size, _ = first_frame.shape
-   grid = np.array([[cell[0] for cell in row] for row in first_frame])
+   dir_path = path.join(getcwd(), 'logs')
+   if not path.exists(dir_path): makedirs(dir_path)
+
+   frames = [cv.imread(path) for path in sorted(glob('frames/frame*.png'), key=lambda path: int(path[12:].split('.')[0]))]
+   if len(frames):
+      resume = input(f"Do you want to resume from the last frame? ({len(frames)-1}) (y/n) ")
    
+   # First Frame
+   if not resume == 'y':
+      first_frame = cv.imread('start_.png')
+      *size, _ = first_frame.shape
+      grid = np.array([[cell[0] for cell in row] for row in first_frame])
+      n = 0
+   else:
+      first_frame = frames[-1]
+      *size, _ = first_frame.shape
+      grid = np.array([[cell[0] for cell in row] for row in first_frame])
+      n, start_num = len(frames), len(frames)
+      
    if False:
       start = time()
       for _ in range(2):
@@ -178,14 +197,23 @@ if __name__ == '__main__':
    # Creating frames
    Thread(target=interupt).start()
 
-   start, run, n, times = time(), True, 0, []
+   start, run, times, dates = time(), True, [], []
    while run:
       s_ = time()
       cv.imwrite(f'./frames/frame{n}.png', grid)
-      grid = tick(24, grid, size)
+      grid = tick(16, grid, size)
       n += 1
       times.append(time()-s_)
+      dates.append(localtime())
 
    print(f'{time()-start:3f}s')
 
-   input()
+   # Creating log
+   logs = [int(path[8:-4]) for path in sorted(glob('logs/log*.txt'), key=lambda path: int(path[8:-4].split('.')[0]))]
+
+   if len(logs) > 0:
+      with open(f'logs/log{logs[-1]+1}.txt', 'w') as log:
+         log.writelines(f'[{asctime(date)}] frame{x} - {time}s\n' for x, time, date in zip(range(start_num, n+1), times, dates))
+   else:
+      with open(f'logs/log0.txt', 'w') as log:
+         log.writelines(f'[{asctime(date)}] frame{x} - {time}s\n' for x, time, date in zip(range(start_num, n+1), times, dates))
