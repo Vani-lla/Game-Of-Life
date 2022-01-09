@@ -168,15 +168,14 @@ if __name__ == '__main__':
    if not path.exists(dir_path): makedirs(dir_path)
 
    frames = [cv.imread(path) for path in sorted(glob('frames/frame*.png'), key=lambda path: int(path[12:].split('.')[0]))]
-   if len(frames):
-      resume = input(f"Do you want to resume from the last frame? ({len(frames)-1}) (y/n) ")
+   resume = input(f"Do you want to resume from the last frame? ({len(frames)-1}) (y/n) ") if len(frames) else 0
    
    # First Frame
    if not resume == 'y':
       first_frame = cv.imread('start_.png')
       *size, _ = first_frame.shape
       grid = np.array([[cell[0] for cell in row] for row in first_frame])
-      n = 0
+      n, start_num = 0, 0
    else:
       first_frame = frames[-1]
       *size, _ = first_frame.shape
